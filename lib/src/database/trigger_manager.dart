@@ -74,29 +74,13 @@ class TriggerManager {
 
       try {
         await _dropTriggersForTable(db, tableName);
+        print('   🔄 Dropped old triggers for $tableName');
 
-        // BEFORE INSERT Trigger - Update client timestamp
-        // Note: SQLite BEFORE INSERT triggers update the state table atomically
-        // Application code should read the updated timestamp and set mtds_client_ts and mtds_device_id
-        // This ensures monotonic timestamp increments even under concurrent operations
-        // **Why Triggers Update State Table But Don't Set NEW Values:**
-        //
-        // SQLite triggers have limitations that prevent direct assignment to NEW values:
-        // 1. No RETURNING clause in UPDATE statements
-        // 2. Complex syntax for modifying NEW values (unreliable across SQLite versions)
-        // 3. Limited support for complex bitwise operations needed for PK generation
-        //
-        // **Solution**: Hybrid approach
-        // - Triggers: Update state table atomically (ensures monotonic timestamps under concurrency)
-        // - Application: Use RecordHelper.prepareForInsert() to set mtds_device_id and mtds_client_ts
-        //
-        // This ensures:
-        // - Atomic state table updates (triggers handle this)
-        // - Correct values set before insert (RecordHelper handles this)
-        // - Works reliably across all SQLite versions
-        //
-        // See RecordHelper documentation for details on why this approach is used.
-        await db.customStatement('''
+        // BEFORE INSERT Trigger - Update client timestamp in state table
+        // Note: SQLite doesn't support direct assignment to NEW.column with subqueries
+        // Application code must use RecordHelper to set mtds_device_id and mtds_client_ts
+        // OR set default values that will be updated by the trigger logic
+        final beforeInsertSql = '''
           CREATE TRIGGER IF NOT EXISTS mtds_trigger_${tableName}_insert_before
           BEFORE INSERT ON $tableName
           FOR EACH ROW
@@ -109,20 +93,20 @@ class TriggerManager {
             )
             WHERE attribute = 'mtds:client_ts';
           END;
-        ''');
+        ''';
+
+        print('   📝 Creating BEFORE INSERT trigger...');
+        await db.customStatement(beforeInsertSql);
+        print('   ✅ BEFORE INSERT trigger created');
 
         // BEFORE UPDATE Trigger - Update client timestamp atomically
-        //
-        // Similar to BEFORE INSERT trigger, this updates the state table atomically.
-        // Application code should use RecordHelper.prepareForUpdate() to set values.
+        print('   📝 Creating BEFORE UPDATE trigger...');
         await db.customStatement('''
           CREATE TRIGGER IF NOT EXISTS mtds_trigger_${tableName}_update_before
           BEFORE UPDATE ON $tableName
           FOR EACH ROW
           BEGIN
             -- Update client timestamp in state table (monotonic increment)
-            -- This ensures atomic updates even under concurrent operations
-            -- Application code (RecordHelper) will read this value and set NEW.mtds_client_ts
             UPDATE mtds_state
             SET numValue = MAX(
               COALESCE((SELECT numValue FROM mtds_state WHERE attribute = 'mtds:client_ts'), 0) + 1,
@@ -131,9 +115,10 @@ class TriggerManager {
             WHERE attribute = 'mtds:client_ts';
           END;
         ''');
+        print('   ✅ BEFORE UPDATE trigger created');
 
         // AFTER INSERT Trigger - Log changes to change log
-        // Only capture local writes by matching state table device_id
+        print('   📝 Creating AFTER INSERT trigger...');
         await db.customStatement('''
           CREATE TRIGGER IF NOT EXISTS mtds_trigger_${tableName}_insert
           AFTER INSERT ON $tableName
@@ -153,9 +138,10 @@ class TriggerManager {
               );
           END;
         ''');
+        print('   ✅ AFTER INSERT trigger created');
 
         // AFTER UPDATE Trigger - Log changes to change log
-        // Only capture local writes by matching state table device_id
+        print('   📝 Creating AFTER UPDATE trigger...');
         await db.customStatement('''
           CREATE TRIGGER IF NOT EXISTS mtds_trigger_${tableName}_update
           AFTER UPDATE ON $tableName
@@ -190,11 +176,33 @@ class TriggerManager {
               );
           END;
         ''');
-      } catch (e) {
+        print('   ✅ AFTER UPDATE trigger created');
+        print('   ✅ All triggers created successfully for $tableName');
+      } catch (e, stackTrace) {
         print('❌ Error creating triggers for $tableName: $e');
+        print('   Stack trace: $stackTrace');
+        rethrow; // Re-throw to see the actual error
       }
     }
-    print("✅ Triggers created successfully.");
+
+    // Verify triggers were created
+    final triggerCheck =
+        await db.customSelect('''
+      SELECT name FROM sqlite_master 
+      WHERE type = 'trigger' 
+      AND name LIKE 'mtds_trigger_%'
+    ''').get();
+
+    final triggerCount = triggerCheck.length;
+    print(
+      "✅ Triggers created successfully. Total MTDS triggers: $triggerCount",
+    );
+
+    if (triggerCount == 0) {
+      print(
+        "⚠️ WARNING: No triggers were created! This may indicate an error.",
+      );
+    }
   }
 }
 

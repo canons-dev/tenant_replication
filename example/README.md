@@ -16,12 +16,16 @@ Complete working example demonstrating the MTDS Flutter SDK with real-time synch
 cd example
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
+#alternative
+dart run build_runner clean
+dart run build_runner build
 flutter run -d linux
 ```
 
 ### Server Setup
 
 1. **Start the server** (from `tenant_replication_postgres/examples/example-app`):
+
    ```bash
    npm install
    npm run setup:db  # Creates database and tables
@@ -106,27 +110,33 @@ flutter run -d linux
 ### 3. Test Operations
 
 1. **Create User** - Click "➕ Add User"
+
    - Verifies local insert
    - Triggers change log entry
    - Auto-sync will sync after 5 seconds (if enabled)
 
 2. **Update User** - Click "✏️ Update" on any user
+
    - Updates `mtds_last_updated_txid`
    - Creates change log entry
 
 3. **Soft Delete** - Click "🗑️ Soft Delete"
+
    - Sets `mtds_deleted_txid`
    - Syncs to server
 
 4. **Hard Delete** - Click "🗑️ Hard Delete"
+
    - Permanently removes from local DB
    - Does NOT sync to server
 
 5. **Manual Sync** - Click "🔄 Sync to Server"
+
    - Uploads all pending changes
    - Shows notification on completion
 
 6. **Load from Server** - Click "📥 Load from Server"
+
    - Fetches latest data from server
    - Upserts into local database
    - Filters server-only columns automatically
@@ -158,6 +168,7 @@ await sdk.enableAutoSync(
 ```
 
 **Features:**
+
 - Syncs when changes are detected (5s debounce)
 - Syncs when network comes back online
 - Shows notifications for sync events

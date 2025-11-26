@@ -18,7 +18,7 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDeleted = user.mtdsDeletedTxid != null;
+    final isDeleted = user.mtdsDeleteTs != null;
 
     return Card(
       color: isDeleted ? Colors.red.shade50 : null,
@@ -41,12 +41,17 @@ class UserCard extends StatelessWidget {
           children: [
             Text(user.email),
             Text(
-              'TXID: ${user.mtdsLastUpdatedTxid}',
+              'Client TS: ${user.mtdsClientTs}',
               style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
             ),
+            if (user.mtdsServerTs != null)
+              Text(
+                'Server TS: ${user.mtdsServerTs}',
+                style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: Colors.green),
+              ),
             if (isDeleted)
               Text(
-                'Deleted TXID: ${user.mtdsDeletedTxid}',
+                'Deleted TS: ${user.mtdsDeleteTs}',
                 style: const TextStyle(fontSize: 10, color: Colors.red),
               ),
           ],

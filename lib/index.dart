@@ -25,6 +25,7 @@ export 'src/models/server_events.dart';
 export 'src/sync/sync_service.dart';
 export 'src/sync/sse_service.dart';
 export 'src/sync/delete_service.dart';
+export 'src/sync/auto_sync_service.dart';
 
 // Users must import drift and dio themselves
 // This gives them version control and flexibility

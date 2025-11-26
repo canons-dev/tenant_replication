@@ -39,6 +39,9 @@ class SdkService {
       deviceId: 12345, // Test device ID
     );
 
+    // Initialize SDK (sets up device ID, TX class, and all services)
+    await sdk.initialize();
+
     return sdk;
   }
 }

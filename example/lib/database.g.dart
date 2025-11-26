@@ -8,38 +8,50 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $UsersTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _mtdsLastUpdatedTxidMeta =
-      const VerificationMeta('mtdsLastUpdatedTxid');
+  static const VerificationMeta _mtdsClientTsMeta = const VerificationMeta(
+    'mtdsClientTs',
+  );
   @override
-  late final GeneratedColumn<int> mtdsLastUpdatedTxid = GeneratedColumn<int>(
-    'mtds_last_updated_txid',
+  late final GeneratedColumn<BigInt> mtdsClientTs = GeneratedColumn<BigInt>(
+    'mtds_client_ts',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
-    defaultValue: const Constant(0),
+    defaultValue: Constant(BigInt.from(0)),
+  );
+  static const VerificationMeta _mtdsServerTsMeta = const VerificationMeta(
+    'mtdsServerTs',
+  );
+  @override
+  late final GeneratedColumn<BigInt> mtdsServerTs = GeneratedColumn<BigInt>(
+    'mtds_server_ts',
+    aliasedName,
+    true,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _mtdsDeviceIdMeta = const VerificationMeta(
     'mtdsDeviceId',
   );
   @override
-  late final GeneratedColumn<int> mtdsDeviceId = GeneratedColumn<int>(
+  late final GeneratedColumn<BigInt> mtdsDeviceId = GeneratedColumn<BigInt>(
     'mtds_device_id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
-    defaultValue: const Constant(0),
+    defaultValue: Constant(BigInt.from(0)),
   );
-  static const VerificationMeta _mtdsDeletedTxidMeta = const VerificationMeta(
-    'mtdsDeletedTxid',
+  static const VerificationMeta _mtdsDeleteTsMeta = const VerificationMeta(
+    'mtdsDeleteTs',
   );
   @override
-  late final GeneratedColumn<int> mtdsDeletedTxid = GeneratedColumn<int>(
-    'mtds_deleted_txid',
+  late final GeneratedColumn<BigInt> mtdsDeleteTs = GeneratedColumn<BigInt>(
+    'mtds_delete_ts',
     aliasedName,
     true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
@@ -84,9 +96,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   );
   @override
   List<GeneratedColumn> get $columns => [
-    mtdsLastUpdatedTxid,
+    mtdsClientTs,
+    mtdsServerTs,
     mtdsDeviceId,
-    mtdsDeletedTxid,
+    mtdsDeleteTs,
     id,
     name,
     email,
@@ -104,12 +117,21 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('mtds_last_updated_txid')) {
+    if (data.containsKey('mtds_client_ts')) {
       context.handle(
-        _mtdsLastUpdatedTxidMeta,
-        mtdsLastUpdatedTxid.isAcceptableOrUnknown(
-          data['mtds_last_updated_txid']!,
-          _mtdsLastUpdatedTxidMeta,
+        _mtdsClientTsMeta,
+        mtdsClientTs.isAcceptableOrUnknown(
+          data['mtds_client_ts']!,
+          _mtdsClientTsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mtds_server_ts')) {
+      context.handle(
+        _mtdsServerTsMeta,
+        mtdsServerTs.isAcceptableOrUnknown(
+          data['mtds_server_ts']!,
+          _mtdsServerTsMeta,
         ),
       );
     }
@@ -122,12 +144,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         ),
       );
     }
-    if (data.containsKey('mtds_deleted_txid')) {
+    if (data.containsKey('mtds_delete_ts')) {
       context.handle(
-        _mtdsDeletedTxidMeta,
-        mtdsDeletedTxid.isAcceptableOrUnknown(
-          data['mtds_deleted_txid']!,
-          _mtdsDeletedTxidMeta,
+        _mtdsDeleteTsMeta,
+        mtdsDeleteTs.isAcceptableOrUnknown(
+          data['mtds_delete_ts']!,
+          _mtdsDeleteTsMeta,
         ),
       );
     }
@@ -165,19 +187,23 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   User map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return User(
-      mtdsLastUpdatedTxid:
+      mtdsClientTs:
           attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}mtds_last_updated_txid'],
+            DriftSqlType.bigInt,
+            data['${effectivePrefix}mtds_client_ts'],
           )!,
+      mtdsServerTs: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}mtds_server_ts'],
+      ),
       mtdsDeviceId:
           attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
+            DriftSqlType.bigInt,
             data['${effectivePrefix}mtds_device_id'],
           )!,
-      mtdsDeletedTxid: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}mtds_deleted_txid'],
+      mtdsDeleteTs: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}mtds_delete_ts'],
       ),
       id:
           attachedDatabase.typeMapping.read(
@@ -208,24 +234,29 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
 }
 
 class User extends DataClass implements Insertable<User> {
-  /// UTC nanosecond timestamp of the last write (client-generated).
+  /// Client-generated timestamp in milliseconds since client epoch.
   /// Always present with a default of 0 so change detection never hits NULL.
-  final int mtdsLastUpdatedTxid;
+  final BigInt mtdsClientTs;
 
-  /// 48-bit device identifier used for replication guardrails.
+  /// Server-assigned authoritative timestamp in nanoseconds since epoch (NodeJS HR based).
+  /// NULL until the record is synced to server.
+  final BigInt? mtdsServerTs;
+
+  /// 64-bit device identifier used for replication guardrails.
   /// Always present with a default of 0; SDK overwrites it on each write.
-  final int mtdsDeviceId;
+  final BigInt mtdsDeviceId;
 
-  /// Soft-delete marker (NULL = active, non-null = deleted at TXID)
-  final int? mtdsDeletedTxid;
+  /// Soft-delete marker (NULL = active, non-null = deleted at timestamp in milliseconds since client epoch)
+  final BigInt? mtdsDeleteTs;
   final int id;
   final String name;
   final String email;
   final int? age;
   const User({
-    required this.mtdsLastUpdatedTxid,
+    required this.mtdsClientTs,
+    this.mtdsServerTs,
     required this.mtdsDeviceId,
-    this.mtdsDeletedTxid,
+    this.mtdsDeleteTs,
     required this.id,
     required this.name,
     required this.email,
@@ -234,10 +265,13 @@ class User extends DataClass implements Insertable<User> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['mtds_last_updated_txid'] = Variable<int>(mtdsLastUpdatedTxid);
-    map['mtds_device_id'] = Variable<int>(mtdsDeviceId);
-    if (!nullToAbsent || mtdsDeletedTxid != null) {
-      map['mtds_deleted_txid'] = Variable<int>(mtdsDeletedTxid);
+    map['mtds_client_ts'] = Variable<BigInt>(mtdsClientTs);
+    if (!nullToAbsent || mtdsServerTs != null) {
+      map['mtds_server_ts'] = Variable<BigInt>(mtdsServerTs);
+    }
+    map['mtds_device_id'] = Variable<BigInt>(mtdsDeviceId);
+    if (!nullToAbsent || mtdsDeleteTs != null) {
+      map['mtds_delete_ts'] = Variable<BigInt>(mtdsDeleteTs);
     }
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
@@ -250,12 +284,16 @@ class User extends DataClass implements Insertable<User> {
 
   UsersCompanion toCompanion(bool nullToAbsent) {
     return UsersCompanion(
-      mtdsLastUpdatedTxid: Value(mtdsLastUpdatedTxid),
-      mtdsDeviceId: Value(mtdsDeviceId),
-      mtdsDeletedTxid:
-          mtdsDeletedTxid == null && nullToAbsent
+      mtdsClientTs: Value(mtdsClientTs),
+      mtdsServerTs:
+          mtdsServerTs == null && nullToAbsent
               ? const Value.absent()
-              : Value(mtdsDeletedTxid),
+              : Value(mtdsServerTs),
+      mtdsDeviceId: Value(mtdsDeviceId),
+      mtdsDeleteTs:
+          mtdsDeleteTs == null && nullToAbsent
+              ? const Value.absent()
+              : Value(mtdsDeleteTs),
       id: Value(id),
       name: Value(name),
       email: Value(email),
@@ -269,11 +307,10 @@ class User extends DataClass implements Insertable<User> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return User(
-      mtdsLastUpdatedTxid: serializer.fromJson<int>(
-        json['mtdsLastUpdatedTxid'],
-      ),
-      mtdsDeviceId: serializer.fromJson<int>(json['mtdsDeviceId']),
-      mtdsDeletedTxid: serializer.fromJson<int?>(json['mtdsDeletedTxid']),
+      mtdsClientTs: serializer.fromJson<BigInt>(json['mtdsClientTs']),
+      mtdsServerTs: serializer.fromJson<BigInt?>(json['mtdsServerTs']),
+      mtdsDeviceId: serializer.fromJson<BigInt>(json['mtdsDeviceId']),
+      mtdsDeleteTs: serializer.fromJson<BigInt?>(json['mtdsDeleteTs']),
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
@@ -284,9 +321,10 @@ class User extends DataClass implements Insertable<User> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'mtdsLastUpdatedTxid': serializer.toJson<int>(mtdsLastUpdatedTxid),
-      'mtdsDeviceId': serializer.toJson<int>(mtdsDeviceId),
-      'mtdsDeletedTxid': serializer.toJson<int?>(mtdsDeletedTxid),
+      'mtdsClientTs': serializer.toJson<BigInt>(mtdsClientTs),
+      'mtdsServerTs': serializer.toJson<BigInt?>(mtdsServerTs),
+      'mtdsDeviceId': serializer.toJson<BigInt>(mtdsDeviceId),
+      'mtdsDeleteTs': serializer.toJson<BigInt?>(mtdsDeleteTs),
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
@@ -295,18 +333,19 @@ class User extends DataClass implements Insertable<User> {
   }
 
   User copyWith({
-    int? mtdsLastUpdatedTxid,
-    int? mtdsDeviceId,
-    Value<int?> mtdsDeletedTxid = const Value.absent(),
+    BigInt? mtdsClientTs,
+    Value<BigInt?> mtdsServerTs = const Value.absent(),
+    BigInt? mtdsDeviceId,
+    Value<BigInt?> mtdsDeleteTs = const Value.absent(),
     int? id,
     String? name,
     String? email,
     Value<int?> age = const Value.absent(),
   }) => User(
-    mtdsLastUpdatedTxid: mtdsLastUpdatedTxid ?? this.mtdsLastUpdatedTxid,
+    mtdsClientTs: mtdsClientTs ?? this.mtdsClientTs,
+    mtdsServerTs: mtdsServerTs.present ? mtdsServerTs.value : this.mtdsServerTs,
     mtdsDeviceId: mtdsDeviceId ?? this.mtdsDeviceId,
-    mtdsDeletedTxid:
-        mtdsDeletedTxid.present ? mtdsDeletedTxid.value : this.mtdsDeletedTxid,
+    mtdsDeleteTs: mtdsDeleteTs.present ? mtdsDeleteTs.value : this.mtdsDeleteTs,
     id: id ?? this.id,
     name: name ?? this.name,
     email: email ?? this.email,
@@ -314,18 +353,22 @@ class User extends DataClass implements Insertable<User> {
   );
   User copyWithCompanion(UsersCompanion data) {
     return User(
-      mtdsLastUpdatedTxid:
-          data.mtdsLastUpdatedTxid.present
-              ? data.mtdsLastUpdatedTxid.value
-              : this.mtdsLastUpdatedTxid,
+      mtdsClientTs:
+          data.mtdsClientTs.present
+              ? data.mtdsClientTs.value
+              : this.mtdsClientTs,
+      mtdsServerTs:
+          data.mtdsServerTs.present
+              ? data.mtdsServerTs.value
+              : this.mtdsServerTs,
       mtdsDeviceId:
           data.mtdsDeviceId.present
               ? data.mtdsDeviceId.value
               : this.mtdsDeviceId,
-      mtdsDeletedTxid:
-          data.mtdsDeletedTxid.present
-              ? data.mtdsDeletedTxid.value
-              : this.mtdsDeletedTxid,
+      mtdsDeleteTs:
+          data.mtdsDeleteTs.present
+              ? data.mtdsDeleteTs.value
+              : this.mtdsDeleteTs,
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
@@ -336,9 +379,10 @@ class User extends DataClass implements Insertable<User> {
   @override
   String toString() {
     return (StringBuffer('User(')
-          ..write('mtdsLastUpdatedTxid: $mtdsLastUpdatedTxid, ')
+          ..write('mtdsClientTs: $mtdsClientTs, ')
+          ..write('mtdsServerTs: $mtdsServerTs, ')
           ..write('mtdsDeviceId: $mtdsDeviceId, ')
-          ..write('mtdsDeletedTxid: $mtdsDeletedTxid, ')
+          ..write('mtdsDeleteTs: $mtdsDeleteTs, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
@@ -349,9 +393,10 @@ class User extends DataClass implements Insertable<User> {
 
   @override
   int get hashCode => Object.hash(
-    mtdsLastUpdatedTxid,
+    mtdsClientTs,
+    mtdsServerTs,
     mtdsDeviceId,
-    mtdsDeletedTxid,
+    mtdsDeleteTs,
     id,
     name,
     email,
@@ -361,9 +406,10 @@ class User extends DataClass implements Insertable<User> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is User &&
-          other.mtdsLastUpdatedTxid == this.mtdsLastUpdatedTxid &&
+          other.mtdsClientTs == this.mtdsClientTs &&
+          other.mtdsServerTs == this.mtdsServerTs &&
           other.mtdsDeviceId == this.mtdsDeviceId &&
-          other.mtdsDeletedTxid == this.mtdsDeletedTxid &&
+          other.mtdsDeleteTs == this.mtdsDeleteTs &&
           other.id == this.id &&
           other.name == this.name &&
           other.email == this.email &&
@@ -371,26 +417,29 @@ class User extends DataClass implements Insertable<User> {
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
-  final Value<int> mtdsLastUpdatedTxid;
-  final Value<int> mtdsDeviceId;
-  final Value<int?> mtdsDeletedTxid;
+  final Value<BigInt> mtdsClientTs;
+  final Value<BigInt?> mtdsServerTs;
+  final Value<BigInt> mtdsDeviceId;
+  final Value<BigInt?> mtdsDeleteTs;
   final Value<int> id;
   final Value<String> name;
   final Value<String> email;
   final Value<int?> age;
   const UsersCompanion({
-    this.mtdsLastUpdatedTxid = const Value.absent(),
+    this.mtdsClientTs = const Value.absent(),
+    this.mtdsServerTs = const Value.absent(),
     this.mtdsDeviceId = const Value.absent(),
-    this.mtdsDeletedTxid = const Value.absent(),
+    this.mtdsDeleteTs = const Value.absent(),
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.age = const Value.absent(),
   });
   UsersCompanion.insert({
-    this.mtdsLastUpdatedTxid = const Value.absent(),
+    this.mtdsClientTs = const Value.absent(),
+    this.mtdsServerTs = const Value.absent(),
     this.mtdsDeviceId = const Value.absent(),
-    this.mtdsDeletedTxid = const Value.absent(),
+    this.mtdsDeleteTs = const Value.absent(),
     this.id = const Value.absent(),
     required String name,
     required String email,
@@ -398,19 +447,20 @@ class UsersCompanion extends UpdateCompanion<User> {
   }) : name = Value(name),
        email = Value(email);
   static Insertable<User> custom({
-    Expression<int>? mtdsLastUpdatedTxid,
-    Expression<int>? mtdsDeviceId,
-    Expression<int>? mtdsDeletedTxid,
+    Expression<BigInt>? mtdsClientTs,
+    Expression<BigInt>? mtdsServerTs,
+    Expression<BigInt>? mtdsDeviceId,
+    Expression<BigInt>? mtdsDeleteTs,
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? email,
     Expression<int>? age,
   }) {
     return RawValuesInsertable({
-      if (mtdsLastUpdatedTxid != null)
-        'mtds_last_updated_txid': mtdsLastUpdatedTxid,
+      if (mtdsClientTs != null) 'mtds_client_ts': mtdsClientTs,
+      if (mtdsServerTs != null) 'mtds_server_ts': mtdsServerTs,
       if (mtdsDeviceId != null) 'mtds_device_id': mtdsDeviceId,
-      if (mtdsDeletedTxid != null) 'mtds_deleted_txid': mtdsDeletedTxid,
+      if (mtdsDeleteTs != null) 'mtds_delete_ts': mtdsDeleteTs,
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (email != null) 'email': email,
@@ -419,18 +469,20 @@ class UsersCompanion extends UpdateCompanion<User> {
   }
 
   UsersCompanion copyWith({
-    Value<int>? mtdsLastUpdatedTxid,
-    Value<int>? mtdsDeviceId,
-    Value<int?>? mtdsDeletedTxid,
+    Value<BigInt>? mtdsClientTs,
+    Value<BigInt?>? mtdsServerTs,
+    Value<BigInt>? mtdsDeviceId,
+    Value<BigInt?>? mtdsDeleteTs,
     Value<int>? id,
     Value<String>? name,
     Value<String>? email,
     Value<int?>? age,
   }) {
     return UsersCompanion(
-      mtdsLastUpdatedTxid: mtdsLastUpdatedTxid ?? this.mtdsLastUpdatedTxid,
+      mtdsClientTs: mtdsClientTs ?? this.mtdsClientTs,
+      mtdsServerTs: mtdsServerTs ?? this.mtdsServerTs,
       mtdsDeviceId: mtdsDeviceId ?? this.mtdsDeviceId,
-      mtdsDeletedTxid: mtdsDeletedTxid ?? this.mtdsDeletedTxid,
+      mtdsDeleteTs: mtdsDeleteTs ?? this.mtdsDeleteTs,
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
@@ -441,14 +493,17 @@ class UsersCompanion extends UpdateCompanion<User> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (mtdsLastUpdatedTxid.present) {
-      map['mtds_last_updated_txid'] = Variable<int>(mtdsLastUpdatedTxid.value);
+    if (mtdsClientTs.present) {
+      map['mtds_client_ts'] = Variable<BigInt>(mtdsClientTs.value);
+    }
+    if (mtdsServerTs.present) {
+      map['mtds_server_ts'] = Variable<BigInt>(mtdsServerTs.value);
     }
     if (mtdsDeviceId.present) {
-      map['mtds_device_id'] = Variable<int>(mtdsDeviceId.value);
+      map['mtds_device_id'] = Variable<BigInt>(mtdsDeviceId.value);
     }
-    if (mtdsDeletedTxid.present) {
-      map['mtds_deleted_txid'] = Variable<int>(mtdsDeletedTxid.value);
+    if (mtdsDeleteTs.present) {
+      map['mtds_delete_ts'] = Variable<BigInt>(mtdsDeleteTs.value);
     }
     if (id.present) {
       map['id'] = Variable<int>(id.value);
@@ -468,9 +523,10 @@ class UsersCompanion extends UpdateCompanion<User> {
   @override
   String toString() {
     return (StringBuffer('UsersCompanion(')
-          ..write('mtdsLastUpdatedTxid: $mtdsLastUpdatedTxid, ')
+          ..write('mtdsClientTs: $mtdsClientTs, ')
+          ..write('mtdsServerTs: $mtdsServerTs, ')
           ..write('mtdsDeviceId: $mtdsDeviceId, ')
-          ..write('mtdsDeletedTxid: $mtdsDeletedTxid, ')
+          ..write('mtdsDeleteTs: $mtdsDeleteTs, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
@@ -485,38 +541,50 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ProductsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _mtdsLastUpdatedTxidMeta =
-      const VerificationMeta('mtdsLastUpdatedTxid');
+  static const VerificationMeta _mtdsClientTsMeta = const VerificationMeta(
+    'mtdsClientTs',
+  );
   @override
-  late final GeneratedColumn<int> mtdsLastUpdatedTxid = GeneratedColumn<int>(
-    'mtds_last_updated_txid',
+  late final GeneratedColumn<BigInt> mtdsClientTs = GeneratedColumn<BigInt>(
+    'mtds_client_ts',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
-    defaultValue: const Constant(0),
+    defaultValue: Constant(BigInt.from(0)),
+  );
+  static const VerificationMeta _mtdsServerTsMeta = const VerificationMeta(
+    'mtdsServerTs',
+  );
+  @override
+  late final GeneratedColumn<BigInt> mtdsServerTs = GeneratedColumn<BigInt>(
+    'mtds_server_ts',
+    aliasedName,
+    true,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _mtdsDeviceIdMeta = const VerificationMeta(
     'mtdsDeviceId',
   );
   @override
-  late final GeneratedColumn<int> mtdsDeviceId = GeneratedColumn<int>(
+  late final GeneratedColumn<BigInt> mtdsDeviceId = GeneratedColumn<BigInt>(
     'mtds_device_id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
-    defaultValue: const Constant(0),
+    defaultValue: Constant(BigInt.from(0)),
   );
-  static const VerificationMeta _mtdsDeletedTxidMeta = const VerificationMeta(
-    'mtdsDeletedTxid',
+  static const VerificationMeta _mtdsDeleteTsMeta = const VerificationMeta(
+    'mtdsDeleteTs',
   );
   @override
-  late final GeneratedColumn<int> mtdsDeletedTxid = GeneratedColumn<int>(
-    'mtds_deleted_txid',
+  late final GeneratedColumn<BigInt> mtdsDeleteTs = GeneratedColumn<BigInt>(
+    'mtds_delete_ts',
     aliasedName,
     true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
@@ -563,9 +631,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   );
   @override
   List<GeneratedColumn> get $columns => [
-    mtdsLastUpdatedTxid,
+    mtdsClientTs,
+    mtdsServerTs,
     mtdsDeviceId,
-    mtdsDeletedTxid,
+    mtdsDeleteTs,
     id,
     name,
     price,
@@ -583,12 +652,21 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('mtds_last_updated_txid')) {
+    if (data.containsKey('mtds_client_ts')) {
       context.handle(
-        _mtdsLastUpdatedTxidMeta,
-        mtdsLastUpdatedTxid.isAcceptableOrUnknown(
-          data['mtds_last_updated_txid']!,
-          _mtdsLastUpdatedTxidMeta,
+        _mtdsClientTsMeta,
+        mtdsClientTs.isAcceptableOrUnknown(
+          data['mtds_client_ts']!,
+          _mtdsClientTsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mtds_server_ts')) {
+      context.handle(
+        _mtdsServerTsMeta,
+        mtdsServerTs.isAcceptableOrUnknown(
+          data['mtds_server_ts']!,
+          _mtdsServerTsMeta,
         ),
       );
     }
@@ -601,12 +679,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         ),
       );
     }
-    if (data.containsKey('mtds_deleted_txid')) {
+    if (data.containsKey('mtds_delete_ts')) {
       context.handle(
-        _mtdsDeletedTxidMeta,
-        mtdsDeletedTxid.isAcceptableOrUnknown(
-          data['mtds_deleted_txid']!,
-          _mtdsDeletedTxidMeta,
+        _mtdsDeleteTsMeta,
+        mtdsDeleteTs.isAcceptableOrUnknown(
+          data['mtds_delete_ts']!,
+          _mtdsDeleteTsMeta,
         ),
       );
     }
@@ -647,19 +725,23 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   Product map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Product(
-      mtdsLastUpdatedTxid:
+      mtdsClientTs:
           attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}mtds_last_updated_txid'],
+            DriftSqlType.bigInt,
+            data['${effectivePrefix}mtds_client_ts'],
           )!,
+      mtdsServerTs: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}mtds_server_ts'],
+      ),
       mtdsDeviceId:
           attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
+            DriftSqlType.bigInt,
             data['${effectivePrefix}mtds_device_id'],
           )!,
-      mtdsDeletedTxid: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}mtds_deleted_txid'],
+      mtdsDeleteTs: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}mtds_delete_ts'],
       ),
       id:
           attachedDatabase.typeMapping.read(
@@ -690,24 +772,29 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
 }
 
 class Product extends DataClass implements Insertable<Product> {
-  /// UTC nanosecond timestamp of the last write (client-generated).
+  /// Client-generated timestamp in milliseconds since client epoch.
   /// Always present with a default of 0 so change detection never hits NULL.
-  final int mtdsLastUpdatedTxid;
+  final BigInt mtdsClientTs;
 
-  /// 48-bit device identifier used for replication guardrails.
+  /// Server-assigned authoritative timestamp in nanoseconds since epoch (NodeJS HR based).
+  /// NULL until the record is synced to server.
+  final BigInt? mtdsServerTs;
+
+  /// 64-bit device identifier used for replication guardrails.
   /// Always present with a default of 0; SDK overwrites it on each write.
-  final int mtdsDeviceId;
+  final BigInt mtdsDeviceId;
 
-  /// Soft-delete marker (NULL = active, non-null = deleted at TXID)
-  final int? mtdsDeletedTxid;
+  /// Soft-delete marker (NULL = active, non-null = deleted at timestamp in milliseconds since client epoch)
+  final BigInt? mtdsDeleteTs;
   final int id;
   final String name;
   final double price;
   final String? description;
   const Product({
-    required this.mtdsLastUpdatedTxid,
+    required this.mtdsClientTs,
+    this.mtdsServerTs,
     required this.mtdsDeviceId,
-    this.mtdsDeletedTxid,
+    this.mtdsDeleteTs,
     required this.id,
     required this.name,
     required this.price,
@@ -716,10 +803,13 @@ class Product extends DataClass implements Insertable<Product> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['mtds_last_updated_txid'] = Variable<int>(mtdsLastUpdatedTxid);
-    map['mtds_device_id'] = Variable<int>(mtdsDeviceId);
-    if (!nullToAbsent || mtdsDeletedTxid != null) {
-      map['mtds_deleted_txid'] = Variable<int>(mtdsDeletedTxid);
+    map['mtds_client_ts'] = Variable<BigInt>(mtdsClientTs);
+    if (!nullToAbsent || mtdsServerTs != null) {
+      map['mtds_server_ts'] = Variable<BigInt>(mtdsServerTs);
+    }
+    map['mtds_device_id'] = Variable<BigInt>(mtdsDeviceId);
+    if (!nullToAbsent || mtdsDeleteTs != null) {
+      map['mtds_delete_ts'] = Variable<BigInt>(mtdsDeleteTs);
     }
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
@@ -732,12 +822,16 @@ class Product extends DataClass implements Insertable<Product> {
 
   ProductsCompanion toCompanion(bool nullToAbsent) {
     return ProductsCompanion(
-      mtdsLastUpdatedTxid: Value(mtdsLastUpdatedTxid),
-      mtdsDeviceId: Value(mtdsDeviceId),
-      mtdsDeletedTxid:
-          mtdsDeletedTxid == null && nullToAbsent
+      mtdsClientTs: Value(mtdsClientTs),
+      mtdsServerTs:
+          mtdsServerTs == null && nullToAbsent
               ? const Value.absent()
-              : Value(mtdsDeletedTxid),
+              : Value(mtdsServerTs),
+      mtdsDeviceId: Value(mtdsDeviceId),
+      mtdsDeleteTs:
+          mtdsDeleteTs == null && nullToAbsent
+              ? const Value.absent()
+              : Value(mtdsDeleteTs),
       id: Value(id),
       name: Value(name),
       price: Value(price),
@@ -754,11 +848,10 @@ class Product extends DataClass implements Insertable<Product> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Product(
-      mtdsLastUpdatedTxid: serializer.fromJson<int>(
-        json['mtdsLastUpdatedTxid'],
-      ),
-      mtdsDeviceId: serializer.fromJson<int>(json['mtdsDeviceId']),
-      mtdsDeletedTxid: serializer.fromJson<int?>(json['mtdsDeletedTxid']),
+      mtdsClientTs: serializer.fromJson<BigInt>(json['mtdsClientTs']),
+      mtdsServerTs: serializer.fromJson<BigInt?>(json['mtdsServerTs']),
+      mtdsDeviceId: serializer.fromJson<BigInt>(json['mtdsDeviceId']),
+      mtdsDeleteTs: serializer.fromJson<BigInt?>(json['mtdsDeleteTs']),
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       price: serializer.fromJson<double>(json['price']),
@@ -769,9 +862,10 @@ class Product extends DataClass implements Insertable<Product> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'mtdsLastUpdatedTxid': serializer.toJson<int>(mtdsLastUpdatedTxid),
-      'mtdsDeviceId': serializer.toJson<int>(mtdsDeviceId),
-      'mtdsDeletedTxid': serializer.toJson<int?>(mtdsDeletedTxid),
+      'mtdsClientTs': serializer.toJson<BigInt>(mtdsClientTs),
+      'mtdsServerTs': serializer.toJson<BigInt?>(mtdsServerTs),
+      'mtdsDeviceId': serializer.toJson<BigInt>(mtdsDeviceId),
+      'mtdsDeleteTs': serializer.toJson<BigInt?>(mtdsDeleteTs),
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'price': serializer.toJson<double>(price),
@@ -780,18 +874,19 @@ class Product extends DataClass implements Insertable<Product> {
   }
 
   Product copyWith({
-    int? mtdsLastUpdatedTxid,
-    int? mtdsDeviceId,
-    Value<int?> mtdsDeletedTxid = const Value.absent(),
+    BigInt? mtdsClientTs,
+    Value<BigInt?> mtdsServerTs = const Value.absent(),
+    BigInt? mtdsDeviceId,
+    Value<BigInt?> mtdsDeleteTs = const Value.absent(),
     int? id,
     String? name,
     double? price,
     Value<String?> description = const Value.absent(),
   }) => Product(
-    mtdsLastUpdatedTxid: mtdsLastUpdatedTxid ?? this.mtdsLastUpdatedTxid,
+    mtdsClientTs: mtdsClientTs ?? this.mtdsClientTs,
+    mtdsServerTs: mtdsServerTs.present ? mtdsServerTs.value : this.mtdsServerTs,
     mtdsDeviceId: mtdsDeviceId ?? this.mtdsDeviceId,
-    mtdsDeletedTxid:
-        mtdsDeletedTxid.present ? mtdsDeletedTxid.value : this.mtdsDeletedTxid,
+    mtdsDeleteTs: mtdsDeleteTs.present ? mtdsDeleteTs.value : this.mtdsDeleteTs,
     id: id ?? this.id,
     name: name ?? this.name,
     price: price ?? this.price,
@@ -799,18 +894,22 @@ class Product extends DataClass implements Insertable<Product> {
   );
   Product copyWithCompanion(ProductsCompanion data) {
     return Product(
-      mtdsLastUpdatedTxid:
-          data.mtdsLastUpdatedTxid.present
-              ? data.mtdsLastUpdatedTxid.value
-              : this.mtdsLastUpdatedTxid,
+      mtdsClientTs:
+          data.mtdsClientTs.present
+              ? data.mtdsClientTs.value
+              : this.mtdsClientTs,
+      mtdsServerTs:
+          data.mtdsServerTs.present
+              ? data.mtdsServerTs.value
+              : this.mtdsServerTs,
       mtdsDeviceId:
           data.mtdsDeviceId.present
               ? data.mtdsDeviceId.value
               : this.mtdsDeviceId,
-      mtdsDeletedTxid:
-          data.mtdsDeletedTxid.present
-              ? data.mtdsDeletedTxid.value
-              : this.mtdsDeletedTxid,
+      mtdsDeleteTs:
+          data.mtdsDeleteTs.present
+              ? data.mtdsDeleteTs.value
+              : this.mtdsDeleteTs,
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       price: data.price.present ? data.price.value : this.price,
@@ -822,9 +921,10 @@ class Product extends DataClass implements Insertable<Product> {
   @override
   String toString() {
     return (StringBuffer('Product(')
-          ..write('mtdsLastUpdatedTxid: $mtdsLastUpdatedTxid, ')
+          ..write('mtdsClientTs: $mtdsClientTs, ')
+          ..write('mtdsServerTs: $mtdsServerTs, ')
           ..write('mtdsDeviceId: $mtdsDeviceId, ')
-          ..write('mtdsDeletedTxid: $mtdsDeletedTxid, ')
+          ..write('mtdsDeleteTs: $mtdsDeleteTs, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('price: $price, ')
@@ -835,9 +935,10 @@ class Product extends DataClass implements Insertable<Product> {
 
   @override
   int get hashCode => Object.hash(
-    mtdsLastUpdatedTxid,
+    mtdsClientTs,
+    mtdsServerTs,
     mtdsDeviceId,
-    mtdsDeletedTxid,
+    mtdsDeleteTs,
     id,
     name,
     price,
@@ -847,9 +948,10 @@ class Product extends DataClass implements Insertable<Product> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Product &&
-          other.mtdsLastUpdatedTxid == this.mtdsLastUpdatedTxid &&
+          other.mtdsClientTs == this.mtdsClientTs &&
+          other.mtdsServerTs == this.mtdsServerTs &&
           other.mtdsDeviceId == this.mtdsDeviceId &&
-          other.mtdsDeletedTxid == this.mtdsDeletedTxid &&
+          other.mtdsDeleteTs == this.mtdsDeleteTs &&
           other.id == this.id &&
           other.name == this.name &&
           other.price == this.price &&
@@ -857,26 +959,29 @@ class Product extends DataClass implements Insertable<Product> {
 }
 
 class ProductsCompanion extends UpdateCompanion<Product> {
-  final Value<int> mtdsLastUpdatedTxid;
-  final Value<int> mtdsDeviceId;
-  final Value<int?> mtdsDeletedTxid;
+  final Value<BigInt> mtdsClientTs;
+  final Value<BigInt?> mtdsServerTs;
+  final Value<BigInt> mtdsDeviceId;
+  final Value<BigInt?> mtdsDeleteTs;
   final Value<int> id;
   final Value<String> name;
   final Value<double> price;
   final Value<String?> description;
   const ProductsCompanion({
-    this.mtdsLastUpdatedTxid = const Value.absent(),
+    this.mtdsClientTs = const Value.absent(),
+    this.mtdsServerTs = const Value.absent(),
     this.mtdsDeviceId = const Value.absent(),
-    this.mtdsDeletedTxid = const Value.absent(),
+    this.mtdsDeleteTs = const Value.absent(),
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.price = const Value.absent(),
     this.description = const Value.absent(),
   });
   ProductsCompanion.insert({
-    this.mtdsLastUpdatedTxid = const Value.absent(),
+    this.mtdsClientTs = const Value.absent(),
+    this.mtdsServerTs = const Value.absent(),
     this.mtdsDeviceId = const Value.absent(),
-    this.mtdsDeletedTxid = const Value.absent(),
+    this.mtdsDeleteTs = const Value.absent(),
     this.id = const Value.absent(),
     required String name,
     required double price,
@@ -884,19 +989,20 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   }) : name = Value(name),
        price = Value(price);
   static Insertable<Product> custom({
-    Expression<int>? mtdsLastUpdatedTxid,
-    Expression<int>? mtdsDeviceId,
-    Expression<int>? mtdsDeletedTxid,
+    Expression<BigInt>? mtdsClientTs,
+    Expression<BigInt>? mtdsServerTs,
+    Expression<BigInt>? mtdsDeviceId,
+    Expression<BigInt>? mtdsDeleteTs,
     Expression<int>? id,
     Expression<String>? name,
     Expression<double>? price,
     Expression<String>? description,
   }) {
     return RawValuesInsertable({
-      if (mtdsLastUpdatedTxid != null)
-        'mtds_last_updated_txid': mtdsLastUpdatedTxid,
+      if (mtdsClientTs != null) 'mtds_client_ts': mtdsClientTs,
+      if (mtdsServerTs != null) 'mtds_server_ts': mtdsServerTs,
       if (mtdsDeviceId != null) 'mtds_device_id': mtdsDeviceId,
-      if (mtdsDeletedTxid != null) 'mtds_deleted_txid': mtdsDeletedTxid,
+      if (mtdsDeleteTs != null) 'mtds_delete_ts': mtdsDeleteTs,
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (price != null) 'price': price,
@@ -905,18 +1011,20 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   }
 
   ProductsCompanion copyWith({
-    Value<int>? mtdsLastUpdatedTxid,
-    Value<int>? mtdsDeviceId,
-    Value<int?>? mtdsDeletedTxid,
+    Value<BigInt>? mtdsClientTs,
+    Value<BigInt?>? mtdsServerTs,
+    Value<BigInt>? mtdsDeviceId,
+    Value<BigInt?>? mtdsDeleteTs,
     Value<int>? id,
     Value<String>? name,
     Value<double>? price,
     Value<String?>? description,
   }) {
     return ProductsCompanion(
-      mtdsLastUpdatedTxid: mtdsLastUpdatedTxid ?? this.mtdsLastUpdatedTxid,
+      mtdsClientTs: mtdsClientTs ?? this.mtdsClientTs,
+      mtdsServerTs: mtdsServerTs ?? this.mtdsServerTs,
       mtdsDeviceId: mtdsDeviceId ?? this.mtdsDeviceId,
-      mtdsDeletedTxid: mtdsDeletedTxid ?? this.mtdsDeletedTxid,
+      mtdsDeleteTs: mtdsDeleteTs ?? this.mtdsDeleteTs,
       id: id ?? this.id,
       name: name ?? this.name,
       price: price ?? this.price,
@@ -927,14 +1035,17 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (mtdsLastUpdatedTxid.present) {
-      map['mtds_last_updated_txid'] = Variable<int>(mtdsLastUpdatedTxid.value);
+    if (mtdsClientTs.present) {
+      map['mtds_client_ts'] = Variable<BigInt>(mtdsClientTs.value);
+    }
+    if (mtdsServerTs.present) {
+      map['mtds_server_ts'] = Variable<BigInt>(mtdsServerTs.value);
     }
     if (mtdsDeviceId.present) {
-      map['mtds_device_id'] = Variable<int>(mtdsDeviceId.value);
+      map['mtds_device_id'] = Variable<BigInt>(mtdsDeviceId.value);
     }
-    if (mtdsDeletedTxid.present) {
-      map['mtds_deleted_txid'] = Variable<int>(mtdsDeletedTxid.value);
+    if (mtdsDeleteTs.present) {
+      map['mtds_delete_ts'] = Variable<BigInt>(mtdsDeleteTs.value);
     }
     if (id.present) {
       map['id'] = Variable<int>(id.value);
@@ -954,9 +1065,10 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   @override
   String toString() {
     return (StringBuffer('ProductsCompanion(')
-          ..write('mtdsLastUpdatedTxid: $mtdsLastUpdatedTxid, ')
+          ..write('mtdsClientTs: $mtdsClientTs, ')
+          ..write('mtdsServerTs: $mtdsServerTs, ')
           ..write('mtdsDeviceId: $mtdsDeviceId, ')
-          ..write('mtdsDeletedTxid: $mtdsDeletedTxid, ')
+          ..write('mtdsDeleteTs: $mtdsDeleteTs, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('price: $price, ')
@@ -980,9 +1092,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({
-      Value<int> mtdsLastUpdatedTxid,
-      Value<int> mtdsDeviceId,
-      Value<int?> mtdsDeletedTxid,
+      Value<BigInt> mtdsClientTs,
+      Value<BigInt?> mtdsServerTs,
+      Value<BigInt> mtdsDeviceId,
+      Value<BigInt?> mtdsDeleteTs,
       Value<int> id,
       required String name,
       required String email,
@@ -990,9 +1103,10 @@ typedef $$UsersTableCreateCompanionBuilder =
     });
 typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
-      Value<int> mtdsLastUpdatedTxid,
-      Value<int> mtdsDeviceId,
-      Value<int?> mtdsDeletedTxid,
+      Value<BigInt> mtdsClientTs,
+      Value<BigInt?> mtdsServerTs,
+      Value<BigInt> mtdsDeviceId,
+      Value<BigInt?> mtdsDeleteTs,
       Value<int> id,
       Value<String> name,
       Value<String> email,
@@ -1007,18 +1121,23 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  ColumnFilters<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get mtdsDeviceId => $composableBuilder(
+  ColumnFilters<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  ColumnFilters<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1052,18 +1171,23 @@ class $$UsersTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  ColumnOrderings<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get mtdsDeviceId => $composableBuilder(
+  ColumnOrderings<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  ColumnOrderings<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1097,18 +1221,23 @@ class $$UsersTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  GeneratedColumn<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get mtdsDeviceId => $composableBuilder(
+  GeneratedColumn<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  GeneratedColumn<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => column,
   );
 
@@ -1153,17 +1282,19 @@ class $$UsersTableTableManager
               () => $$UsersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> mtdsLastUpdatedTxid = const Value.absent(),
-                Value<int> mtdsDeviceId = const Value.absent(),
-                Value<int?> mtdsDeletedTxid = const Value.absent(),
+                Value<BigInt> mtdsClientTs = const Value.absent(),
+                Value<BigInt?> mtdsServerTs = const Value.absent(),
+                Value<BigInt> mtdsDeviceId = const Value.absent(),
+                Value<BigInt?> mtdsDeleteTs = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<int?> age = const Value.absent(),
               }) => UsersCompanion(
-                mtdsLastUpdatedTxid: mtdsLastUpdatedTxid,
+                mtdsClientTs: mtdsClientTs,
+                mtdsServerTs: mtdsServerTs,
                 mtdsDeviceId: mtdsDeviceId,
-                mtdsDeletedTxid: mtdsDeletedTxid,
+                mtdsDeleteTs: mtdsDeleteTs,
                 id: id,
                 name: name,
                 email: email,
@@ -1171,17 +1302,19 @@ class $$UsersTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> mtdsLastUpdatedTxid = const Value.absent(),
-                Value<int> mtdsDeviceId = const Value.absent(),
-                Value<int?> mtdsDeletedTxid = const Value.absent(),
+                Value<BigInt> mtdsClientTs = const Value.absent(),
+                Value<BigInt?> mtdsServerTs = const Value.absent(),
+                Value<BigInt> mtdsDeviceId = const Value.absent(),
+                Value<BigInt?> mtdsDeleteTs = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 required String name,
                 required String email,
                 Value<int?> age = const Value.absent(),
               }) => UsersCompanion.insert(
-                mtdsLastUpdatedTxid: mtdsLastUpdatedTxid,
+                mtdsClientTs: mtdsClientTs,
+                mtdsServerTs: mtdsServerTs,
                 mtdsDeviceId: mtdsDeviceId,
-                mtdsDeletedTxid: mtdsDeletedTxid,
+                mtdsDeleteTs: mtdsDeleteTs,
                 id: id,
                 name: name,
                 email: email,
@@ -1218,9 +1351,10 @@ typedef $$UsersTableProcessedTableManager =
     >;
 typedef $$ProductsTableCreateCompanionBuilder =
     ProductsCompanion Function({
-      Value<int> mtdsLastUpdatedTxid,
-      Value<int> mtdsDeviceId,
-      Value<int?> mtdsDeletedTxid,
+      Value<BigInt> mtdsClientTs,
+      Value<BigInt?> mtdsServerTs,
+      Value<BigInt> mtdsDeviceId,
+      Value<BigInt?> mtdsDeleteTs,
       Value<int> id,
       required String name,
       required double price,
@@ -1228,9 +1362,10 @@ typedef $$ProductsTableCreateCompanionBuilder =
     });
 typedef $$ProductsTableUpdateCompanionBuilder =
     ProductsCompanion Function({
-      Value<int> mtdsLastUpdatedTxid,
-      Value<int> mtdsDeviceId,
-      Value<int?> mtdsDeletedTxid,
+      Value<BigInt> mtdsClientTs,
+      Value<BigInt?> mtdsServerTs,
+      Value<BigInt> mtdsDeviceId,
+      Value<BigInt?> mtdsDeleteTs,
       Value<int> id,
       Value<String> name,
       Value<double> price,
@@ -1246,18 +1381,23 @@ class $$ProductsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  ColumnFilters<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get mtdsDeviceId => $composableBuilder(
+  ColumnFilters<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  ColumnFilters<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1291,18 +1431,23 @@ class $$ProductsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  ColumnOrderings<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get mtdsDeviceId => $composableBuilder(
+  ColumnOrderings<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  ColumnOrderings<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1336,18 +1481,23 @@ class $$ProductsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get mtdsLastUpdatedTxid => $composableBuilder(
-    column: $table.mtdsLastUpdatedTxid,
+  GeneratedColumn<BigInt> get mtdsClientTs => $composableBuilder(
+    column: $table.mtdsClientTs,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get mtdsDeviceId => $composableBuilder(
+  GeneratedColumn<BigInt> get mtdsServerTs => $composableBuilder(
+    column: $table.mtdsServerTs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<BigInt> get mtdsDeviceId => $composableBuilder(
     column: $table.mtdsDeviceId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get mtdsDeletedTxid => $composableBuilder(
-    column: $table.mtdsDeletedTxid,
+  GeneratedColumn<BigInt> get mtdsDeleteTs => $composableBuilder(
+    column: $table.mtdsDeleteTs,
     builder: (column) => column,
   );
 
@@ -1394,17 +1544,19 @@ class $$ProductsTableTableManager
               () => $$ProductsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> mtdsLastUpdatedTxid = const Value.absent(),
-                Value<int> mtdsDeviceId = const Value.absent(),
-                Value<int?> mtdsDeletedTxid = const Value.absent(),
+                Value<BigInt> mtdsClientTs = const Value.absent(),
+                Value<BigInt?> mtdsServerTs = const Value.absent(),
+                Value<BigInt> mtdsDeviceId = const Value.absent(),
+                Value<BigInt?> mtdsDeleteTs = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<double> price = const Value.absent(),
                 Value<String?> description = const Value.absent(),
               }) => ProductsCompanion(
-                mtdsLastUpdatedTxid: mtdsLastUpdatedTxid,
+                mtdsClientTs: mtdsClientTs,
+                mtdsServerTs: mtdsServerTs,
                 mtdsDeviceId: mtdsDeviceId,
-                mtdsDeletedTxid: mtdsDeletedTxid,
+                mtdsDeleteTs: mtdsDeleteTs,
                 id: id,
                 name: name,
                 price: price,
@@ -1412,17 +1564,19 @@ class $$ProductsTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> mtdsLastUpdatedTxid = const Value.absent(),
-                Value<int> mtdsDeviceId = const Value.absent(),
-                Value<int?> mtdsDeletedTxid = const Value.absent(),
+                Value<BigInt> mtdsClientTs = const Value.absent(),
+                Value<BigInt?> mtdsServerTs = const Value.absent(),
+                Value<BigInt> mtdsDeviceId = const Value.absent(),
+                Value<BigInt?> mtdsDeleteTs = const Value.absent(),
                 Value<int> id = const Value.absent(),
                 required String name,
                 required double price,
                 Value<String?> description = const Value.absent(),
               }) => ProductsCompanion.insert(
-                mtdsLastUpdatedTxid: mtdsLastUpdatedTxid,
+                mtdsClientTs: mtdsClientTs,
+                mtdsServerTs: mtdsServerTs,
                 mtdsDeviceId: mtdsDeviceId,
-                mtdsDeletedTxid: mtdsDeletedTxid,
+                mtdsDeleteTs: mtdsDeleteTs,
                 id: id,
                 name: name,
                 price: price,

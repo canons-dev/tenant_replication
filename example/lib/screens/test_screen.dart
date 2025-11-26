@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:mtds/index.dart';
-import 'package:mtds/src/sync/auto_sync_service.dart';
 import '../database.dart';
 import '../services/sdk_service.dart';
 import '../utils/activity_logger.dart';
@@ -348,24 +347,39 @@ class _TestScreenState extends State<TestScreen> {
   Future<void> _addUser() async {
     try {
       print('🆕 Starting to add user...');
-      final txid = MtdsUtils.generateTxid();
-      print('   Generated TXID: $txid');
-
-      final deviceId = sdk!.deviceId;
-      print('   Using DeviceID: $deviceId');
 
       final randomName = 'User ${DateTime.now().millisecond}';
       print('   Creating user: $randomName');
+
+      // Use RecordHelper to prepare the record with mtds_device_id and mtds_client_ts
+      final record = {
+        'name': randomName,
+        'email': '$randomName@example.com',
+        'age': 25,
+      };
+
+      final prepared = await sdk!.recordHelper.prepareForInsert(
+        record,
+        primaryKeyColumn: 'id',
+      );
+
+      print(
+        '   Prepared record with device_id: ${prepared['mtds_device_id']}, client_ts: ${prepared['mtds_client_ts']}',
+      );
 
       await driftDb
           .into(driftDb.users)
           .insert(
             UsersCompanion.insert(
-              name: randomName,
-              email: '$randomName@example.com',
-              age: Value(25),
-              mtdsLastUpdatedTxid: Value(txid),
-              mtdsDeviceId: Value(deviceId),
+              name: prepared['name'] as String,
+              email: prepared['email'] as String,
+              age: Value(prepared['age'] as int?),
+              mtdsDeviceId: Value(
+                BigInt.parse(prepared['mtds_device_id'].toString()),
+              ),
+              mtdsClientTs: Value(
+                BigInt.parse(prepared['mtds_client_ts'].toString()),
+              ),
             ),
           );
 
@@ -392,15 +406,22 @@ class _TestScreenState extends State<TestScreen> {
 
   Future<void> _updateUser(int userId) async {
     try {
-      final txid = MtdsUtils.generateTxid();
-      final deviceId = sdk!.deviceId;
+      // Use RecordHelper to prepare the update with mtds_client_ts
+      final updateData = {'name': 'Updated ${DateTime.now().millisecond}'};
+
+      final prepared = await sdk!.recordHelper.prepareForUpdate(updateData);
+      print('   Prepared update with client_ts: ${prepared['mtds_client_ts']}');
 
       await (driftDb.update(driftDb.users)
         ..where((t) => t.id.equals(userId))).write(
         UsersCompanion(
-          name: Value('Updated ${DateTime.now().millisecond}'),
-          mtdsLastUpdatedTxid: Value(txid),
-          mtdsDeviceId: Value(deviceId),
+          name: Value(prepared['name'] as String),
+          mtdsClientTs: Value(
+            BigInt.parse(prepared['mtds_client_ts'].toString()),
+          ),
+          mtdsDeviceId: Value(
+            BigInt.parse(prepared['mtds_device_id'].toString()),
+          ),
         ),
       );
 
@@ -440,17 +461,18 @@ class _TestScreenState extends State<TestScreen> {
 
   Future<void> _hardDeleteUser(int userId) async {
     try {
-      await sdk!.hardDelete(
-        tableName: 'users',
-        primaryKeyColumn: 'id',
-        primaryKeyValue: userId,
-      );
+      // Hard delete is now a normal DELETE operation (not synced to server)
+      // Use softDelete() for sync-aware deletions
+      await (driftDb.delete(driftDb.users)
+        ..where((t) => t.id.equals(userId))).go();
 
       setState(() {
-        statusMessage = '✅ User hard-deleted: ID $userId';
+        statusMessage = '✅ User hard-deleted: ID $userId (local only)';
       });
 
-      _addActivityLog('💥 Hard-deleted user: ID $userId');
+      _addActivityLog(
+        '💥 Hard-deleted user: ID $userId (local only, not synced)',
+      );
       await _refreshData();
     } catch (e) {
       setState(() {
